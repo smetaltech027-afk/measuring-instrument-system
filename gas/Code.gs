@@ -77,6 +77,7 @@ function sendSampleEmail_(config, toEmail, simulatedBangkokDate) {
   var testSubject = '[TEST ตัวอย่าง] ' + content.subject;
   MailApp.sendEmail({
     to: toEmail,
+    name: 'Measuring Instrument System',
     subject: testSubject,
     body:
       '*** อีเมลนี้เป็นการทดสอบรูปแบบการแจ้งเตือน (จำลองวันที่ ' +
@@ -210,6 +211,7 @@ function executeReminderJob_(options) {
     try {
       MailApp.sendEmail({
         to: config.recipient,
+        name: 'Measuring Instrument System',
         subject: emailContent.subject,
         body: emailContent.plainBody,
         htmlBody: emailContent.htmlBody

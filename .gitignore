@@ -9,6 +9,7 @@ worker/.wrangler/
 *.tsbuildinfo
 supabase/.temp/
 gas/.clasp.json
+gas/_temp_bootstrap.gs
 
 # Internal planning doc (keep local only; repo is Public for GitHub Pages)
 IMPLEMENTATION_PLAN_FOR_ANT.md
