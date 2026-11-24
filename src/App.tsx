@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { CaliperIcon, ShieldUserIcon } from './components/Icons';
+import { ShieldUserIcon } from './components/Icons';
 import { getVerifiedAdminSession } from './lib/supabase';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { HomePage } from './pages/HomePage';
@@ -93,8 +93,13 @@ export function App() {
               navigateHome();
             }}
           >
-            <span className="brand-mark" aria-hidden="true">
-              <CaliperIcon size={20} />
+            <span className="brand-mark brand-mark--logo">
+              <img
+                src={`${import.meta.env.BASE_URL}smt-logo.png`}
+                alt="โลโก้บริษัท เอส เมททอล เทค จำกัด"
+                width={40}
+                height={38}
+              />
             </span>
             <span className="brand-text">
               <span className="brand-title">ระบบทะเบียนเครื่องมือวัด</span>
