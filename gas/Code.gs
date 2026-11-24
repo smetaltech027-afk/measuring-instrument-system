@@ -41,6 +41,87 @@ function runDailyExpiryReminderDryRun(todayOverride) {
 }
 
 /**
+ * Send a real sample email to smetaltech027@gmail.com (active account) using simulated date
+ * "2026-11-29" (7 days before MI-028 expires on 2026-12-06) WITHOUT writing reminder_logs.
+ */
+function testSendSampleEmailToSelf() {
+  var config = getConfig_();
+  var targetEmail = Session.getActiveUser().getEmail() || 'smetaltech027@gmail.com';
+  return sendSampleEmail_(config, targetEmail, '2026-11-29');
+}
+
+/**
+ * Send a real sample email to configured RECIPIENT_EMAIL (pongsak@smetaltech.co.th)
+ * using simulated date "2026-11-29" WITHOUT writing reminder_logs.
+ */
+function testSendSampleEmailToRecipient() {
+  var config = getConfig_();
+  return sendSampleEmail_(config, config.recipient, '2026-11-29');
+}
+
+function sendSampleEmail_(config, toEmail, simulatedBangkokDate) {
+  var remainingQuota = MailApp.getRemainingDailyQuota();
+  if (remainingQuota < 1) {
+    throw new Error('Gmail MailApp daily quota exhausted (remaining=' + remainingQuota + ').');
+  }
+  var prepared = callWorkerJson_(
+    config.workerUrl + '/api/gas/reminders/prepare',
+    config.secret,
+    { dryRun: true, todayOverride: simulatedBangkokDate }
+  );
+  var due = prepared.due || [];
+  if (due.length === 0) {
+    throw new Error('No due items found for simulated date ' + simulatedBangkokDate);
+  }
+  var content = buildReminderEmailContent_(due, prepared.todayBangkok);
+  var testSubject = '[TEST ตัวอย่าง] ' + content.subject;
+  MailApp.sendEmail({
+    to: toEmail,
+    subject: testSubject,
+    body:
+      '*** อีเมลนี้เป็นการทดสอบรูปแบบการแจ้งเตือน (จำลองวันที่ ' +
+      formatIsoToDmy_(simulatedBangkokDate) +
+      ') ***\n\n' +
+      content.plainBody,
+    htmlBody:
+      '<p style="background:#fef5e7;border:1px solid #f0cf99;color:#8c5306;padding:10px 14px;border-radius:6px;font-family:sans-serif;font-size:13px;">' +
+      '<strong>อีเมลทดสอบระบบ (Test Sample)</strong> — จำลองวันตรวจที่ ' +
+      escapeHtml_(formatIsoToDmy_(simulatedBangkokDate)) +
+      ' (ไม่กระทบสถานะแจ้งเตือนจริงในฐานข้อมูล)</p>' +
+      content.htmlBody
+  });
+  Logger.log(
+    '[TEST_EMAIL_SENT] Sent sample email to ' +
+      toEmail +
+      ' | items=' +
+      due.length +
+      ' | remainingQuota=' +
+      MailApp.getRemainingDailyQuota()
+  );
+  return { ok: true, to: toEmail, itemCount: due.length, subject: testSubject };
+}
+
+/**
+ * Install daily morning trigger (07:00-08:00 Asia/Bangkok) cleanly without duplicates.
+ * Run once after setting DRY_RUN_MODE="false" and approving live alerts.
+ */
+function setupDailyMorningTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i += 1) {
+    if (triggers[i].getHandlerFunction() === 'runDailyExpiryReminder') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('runDailyExpiryReminder')
+    .timeBased()
+    .everyDays(1)
+    .atHour(7)
+    .inTimezone('Asia/Bangkok')
+    .create();
+  Logger.log('[OK] Installed daily morning trigger for runDailyExpiryReminder (07:00-08:00 Asia/Bangkok).');
+}
+
+/**
  * Daily time-driven trigger entrypoint (morning, Asia/Bangkok).
  * Respects DRY_RUN_MODE Script Property until explicitly enabled.
  */
