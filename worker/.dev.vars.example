@@ -1,0 +1,5 @@
+# Local wrangler dev secrets (copy to worker/.dev.vars — NEVER commit)
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+GAS_REMINDER_SECRET=replace-with-strong-random-secret-min-32-chars
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173

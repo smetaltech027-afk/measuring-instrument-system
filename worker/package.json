@@ -1,0 +1,19 @@
+{
+  "name": "measuring-instrument-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "check:deploy": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261124.1",
+    "typescript": "7.0.2",
+    "wrangler": "4.167.0"
+  },
+  "dependencies": {
+    "measuring-instrument-system": "file:.."
+  }
+}

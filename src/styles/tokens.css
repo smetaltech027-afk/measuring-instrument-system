@@ -1,0 +1,185 @@
+/* Precision Workshop Design Tokens — Concept A */
+:root {
+  /* Core Palette (WCAG AA+ verified) */
+  --bg-canvas: #f4f7f8;
+  --bg-surface: #ffffff;
+  --bg-subtle: #edf3f5;
+  --bg-tint: #e4eff3;
+
+  --ink-primary: #173447;
+  --ink-secondary: #466173;
+  --ink-muted: #5d7788;
+
+  --brand-primary: #246a82;
+  --brand-primary-hover: #1b5468;
+  --brand-primary-active: #144152;
+  --brand-navy: #173447;
+
+  /* Semantic Expiry & Status Tokens */
+  --amber-accent: #c77d12;
+  --amber-text: #8c5306;
+  --amber-bg: #fef5e7;
+  --amber-border: #f0cf99;
+
+  --red-accent: #b43b3b;
+  --red-text: #962828;
+  --red-bg: #fdecec;
+  --red-border: #f2bcbc;
+
+  --green-accent: #1e7356;
+  --green-text: #185e47;
+  --green-bg: #e8f5f0;
+  --green-border: #b7dfd0;
+
+  --neutral-text: #3d5463;
+  --neutral-bg: #eef3f5;
+  --neutral-border: #ccd9e0;
+
+  /* Borders & Elevation */
+  --border-default: #d3e0e6;
+  --border-strong: #b4c8d2;
+  --shadow-sm: 0 1px 2px rgba(23, 52, 71, 0.06);
+  --shadow-md: 0 8px 24px rgba(23, 52, 71, 0.08), 0 1px 3px rgba(23, 52, 71, 0.05);
+  --shadow-modal: 0 24px 56px rgba(15, 36, 51, 0.28), 0 2px 8px rgba(15, 36, 51, 0.12);
+
+  /* Typography */
+  --font-sans: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Spacing & Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --focus-ring: 0 0 0 3px rgba(36, 106, 130, 0.34);
+  --container-max: 1180px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-primary);
+  background-color: var(--bg-canvas);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(36, 106, 130, 0.14);
+}
+
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--ink-primary);
+  line-height: 1.28;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--brand-primary);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+a,
+select,
+input {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  z-index: 9999;
+  padding: 10px 16px;
+  background-color: var(--brand-navy);
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  left: 12px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

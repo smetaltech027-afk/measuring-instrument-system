@@ -1,0 +1,19 @@
+name = "measuring-instrument-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Comma-separated allowed browser origins for CORS (Production GitHub Pages + Local dev)
+ALLOWED_ORIGINS = "https://smetaltech027-afk.github.io,http://localhost:5173,http://127.0.0.1:5173"
+REMINDER_TIMEZONE = "Asia/Bangkok"
+REMINDER_MAX_ATTEMPTS = "3"
+
+# Private R2 Bucket binding for instrument photos (NEVER enable public r2.dev)
+[[r2_buckets]]
+binding = "INSTRUMENT_PHOTOS"
+bucket_name = "measuring-instrument-photos"
+
+# Required secrets (set with `wrangler secret put <NAME>` ONLY after deployment approval):
+# - SUPABASE_URL
+# - SUPABASE_SERVICE_ROLE_KEY
+# - GAS_REMINDER_SECRET
