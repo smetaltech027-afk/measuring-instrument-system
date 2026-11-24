@@ -11,8 +11,9 @@ supabase/.temp/
 gas/.clasp.json
 gas/_temp_bootstrap.gs
 
-# Internal planning doc (keep local only; repo is Public for GitHub Pages)
+# Internal planning & handover docs (keep local only; repo is Public for GitHub Pages)
 IMPLEMENTATION_PLAN_FOR_ANT.md
+HANDOVER_AND_CHANGELOG.md
 
 # Environment & secrets
 .env
