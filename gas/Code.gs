@@ -85,10 +85,23 @@ function sendSampleEmail_(config, toEmail, simulatedBangkokDate) {
       ') ***\n\n' +
       content.plainBody,
     htmlBody:
-      '<p style="background:#fef5e7;border:1px solid #f0cf99;color:#8c5306;padding:10px 14px;border-radius:6px;font-family:sans-serif;font-size:13px;">' +
-      '<strong>อีเมลทดสอบระบบ (Test Sample)</strong> — จำลองวันตรวจที่ ' +
-      escapeHtml_(formatIsoToDmy_(simulatedBangkokDate)) +
-      ' (ไม่กระทบสถานะแจ้งเตือนจริงในฐานข้อมูล)</p>' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f7f8" style="width:100%;background-color:#f4f7f8;margin:0;padding:0;">' +
+        '<tr>' +
+          '<td align="center" style="padding:14px 12px 0 12px;">' +
+            '<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" align="center"><tr><td><![endif]-->' +
+            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;border-collapse:collapse;">' +
+              '<tr>' +
+                '<td bgcolor="#fef5e7" style="background-color:#fef5e7;border:1px solid #f0cf99;padding:10px 14px;font-family:Tahoma,\'Segoe UI\',Arial,sans-serif;font-size:13px;line-height:20px;color:#8c5306;mso-line-height-rule:exactly;">' +
+                  '<strong>อีเมลทดสอบระบบ (Test Sample)</strong> &mdash; จำลองวันตรวจที่ ' +
+                  escapeHtml_(formatIsoToDmy_(simulatedBangkokDate)) +
+                  ' (ไม่กระทบสถานะแจ้งเตือนจริงในฐานข้อมูล)' +
+                '</td>' +
+              '</tr>' +
+            '</table>' +
+            '<!--[if mso]></td></tr></table><![endif]-->' +
+          '</td>' +
+        '</tr>' +
+      '</table>' +
       content.htmlBody
   });
   Logger.log(
@@ -328,6 +341,9 @@ function buildReminderEmailContent_(dueItems, todayBangkok) {
     ''
   ];
 
+  var fontMain = "Tahoma,'Segoe UI',Arial,sans-serif";
+  var fontMono = "Consolas,'Courier New',monospace";
+
   var htmlCards = [];
   for (var i = 0; i < dueItems.length; i += 1) {
     var item = dueItems[i];
@@ -348,47 +364,76 @@ function buildReminderEmailContent_(dueItems, todayBangkok) {
       note;
     plainLines.push(line);
 
-    var sizeText = item.size ? ' • ขนาด ' + item.size : '';
+    var sizeText = item.size ? '  |  ขนาด ' + item.size : '';
     htmlCards.push(
-      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border:1px solid #d3e0e6;border-left:4px solid #c77d12;border-radius:8px;background:#fafcfd;margin-bottom:10px;">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:12px;">' +
         '<tr>' +
-          '<td style="padding:12px 14px;">' +
-            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+          '<td width="4" bgcolor="#c77d12" style="width:4px;background-color:#c77d12;font-size:0;line-height:0;">&nbsp;</td>' +
+          '<td bgcolor="#fafcfd" style="background-color:#fafcfd;border-top:1px solid #d3e0e6;border-right:1px solid #d3e0e6;border-bottom:1px solid #d3e0e6;padding:14px 16px;">' +
+            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">' +
               '<tr>' +
-                '<td align="left" style="vertical-align:middle;">' +
-                  '<span style="display:inline-block;padding:3px 8px;border-radius:5px;background:#e4eff3;border:1px solid #c6dce4;color:#173447;font-family:monospace;font-size:13px;font-weight:700;white-space:nowrap;">' +
-                    escapeHtml_(item.instrument_code) +
-                  '</span>' +
+                '<td align="left" valign="middle" style="padding-bottom:10px;">' +
+                  '<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">' +
+                    '<tr>' +
+                      '<td bgcolor="#e4eff3" style="background-color:#e4eff3;border:1px solid #c6dce4;padding:4px 10px;font-family:' +
+                        fontMono +
+                        ';font-size:13px;font-weight:bold;line-height:18px;color:#173447;white-space:nowrap;mso-line-height-rule:exactly;">' +
+                        escapeHtml_(item.instrument_code) +
+                      '</td>' +
+                    '</tr>' +
+                  '</table>' +
                 '</td>' +
-                '<td align="right" style="vertical-align:middle;">' +
-                  '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:#fef5e7;border:1px solid #f0cf99;color:#8c5306;font-size:12px;font-weight:700;white-space:nowrap;">' +
-                    'เหลือ ' +
-                    item.days_remaining +
-                    ' วัน' +
-                    escapeHtml_(note) +
-                  '</span>' +
+                '<td align="right" valign="middle" style="padding-bottom:10px;">' +
+                  '<table role="presentation" cellpadding="0" cellspacing="0" align="right" style="border-collapse:collapse;">' +
+                    '<tr>' +
+                      '<td bgcolor="#fef5e7" style="background-color:#fef5e7;border:1px solid #f0cf99;padding:4px 10px;font-family:' +
+                        fontMain +
+                        ';font-size:12px;font-weight:bold;line-height:18px;color:#8c5306;white-space:nowrap;mso-line-height-rule:exactly;">' +
+                        'เหลือ ' +
+                        item.days_remaining +
+                        ' วัน' +
+                        escapeHtml_(note) +
+                      '</td>' +
+                    '</tr>' +
+                  '</table>' +
                 '</td>' +
               '</tr>' +
-            '</table>' +
-            '<div style="font-size:16px;font-weight:700;color:#173447;line-height:1.35;margin-bottom:10px;word-break:break-word;">' +
-              escapeHtml_(item.name) +
-            '</div>' +
-            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border-top:1px solid #e4edf1;">' +
               '<tr>' +
-                '<td style="padding-top:8px;padding-right:10px;vertical-align:top;width:52%;">' +
-                  '<div style="font-size:11px;color:#5d7788;margin-bottom:2px;">สถานที่ใช้งาน / หน่วยงาน</div>' +
-                  '<div style="font-size:14px;font-weight:600;color:#173447;">' +
-                    escapeHtml_(item.location || 'ไม่ระบุ') +
-                    '<span style="font-weight:400;color:#5d7788;font-size:12px;">' +
-                    escapeHtml_(sizeText) +
-                    '</span>' +
-                  '</div>' +
+                '<td colspan="2" style="padding-bottom:12px;font-family:' +
+                  fontMain +
+                  ';font-size:16px;font-weight:bold;line-height:24px;color:#173447;mso-line-height-rule:exactly;">' +
+                  escapeHtml_(item.name) +
                 '</td>' +
-                '<td align="right" style="padding-top:8px;vertical-align:top;width:48%;">' +
-                  '<div style="font-size:11px;color:#5d7788;margin-bottom:2px;white-space:nowrap;">วันหมดอายุ (EXPIRED)</div>' +
-                  '<div style="font-size:15px;font-weight:700;color:#8c5306;font-family:monospace;white-space:nowrap;">' +
-                    escapeHtml_(formatIsoToDmy_(item.expiry_date)) +
-                  '</div>' +
+              '</tr>' +
+              '<tr>' +
+                '<td colspan="2" style="border-top:1px solid #e1ebef;padding-top:10px;">' +
+                  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">' +
+                    '<tr>' +
+                      '<td width="56%" align="left" valign="top" style="padding-right:10px;">' +
+                        '<div style="font-family:' +
+                          fontMain +
+                          ';font-size:12px;line-height:18px;color:#5d7788;margin:0 0 3px 0;mso-line-height-rule:exactly;">สถานที่ใช้งาน / หน่วยงาน</div>' +
+                        '<div style="font-family:' +
+                          fontMain +
+                          ';font-size:14px;font-weight:bold;line-height:21px;color:#173447;margin:0;mso-line-height-rule:exactly;">' +
+                          escapeHtml_(item.location || 'ไม่ระบุ') +
+                          '<span style="font-weight:normal;color:#466173;font-size:13px;">' +
+                          escapeHtml_(sizeText) +
+                          '</span>' +
+                        '</div>' +
+                      '</td>' +
+                      '<td width="44%" align="right" valign="top">' +
+                        '<div style="font-family:' +
+                          fontMain +
+                          ';font-size:12px;line-height:18px;color:#5d7788;margin:0 0 3px 0;white-space:nowrap;mso-line-height-rule:exactly;">วันหมดอายุ (EXPIRED)</div>' +
+                        '<div style="font-family:' +
+                          fontMono +
+                          ';font-size:15px;font-weight:bold;line-height:21px;color:#8c5306;margin:0;white-space:nowrap;mso-line-height-rule:exactly;">' +
+                          escapeHtml_(formatIsoToDmy_(item.expiry_date)) +
+                        '</div>' +
+                      '</td>' +
+                    '</tr>' +
+                  '</table>' +
                 '</td>' +
               '</tr>' +
             '</table>' +
@@ -403,32 +448,68 @@ function buildReminderEmailContent_(dueItems, todayBangkok) {
   plainLines.push('อีเมลนี้ส่งอัตโนมัติจากระบบทะเบียนเครื่องมือวัด (ส่ง 1 ครั้งต่อรอบวันหมดอายุ)');
 
   var htmlBody =
-    '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;color:#173447;max-width:600px;margin:0 auto;">' +
-      '<div style="background:#173447;color:#ffffff;padding:16px 18px;border-radius:10px 10px 0 0;">' +
-        '<div style="font-size:12px;color:#b8d4df;margin-bottom:3px;">บริษัท เอส เมททอล เทค จำกัด • เอกสาร RG-PD-001</div>' +
-        '<div style="font-size:17px;font-weight:700;line-height:1.3;">แจ้งเตือนเครื่องมือวัดใกล้ครบกำหนด</div>' +
-      '</div>' +
-      '<div style="border:1px solid #d3e0e6;border-top:none;padding:16px;border-radius:0 0 10px 10px;background:#ffffff;">' +
-        '<p style="margin:0 0 14px 0;font-size:14px;line-height:1.5;color:#2f4959;">' +
-          'รายการเครื่องมือวัดที่ใกล้ครบกำหนดวันหมดอายุ ประจำวันที่ ' +
-          '<strong style="white-space:nowrap;">' +
-          escapeHtml_(formatIsoToDmy_(todayBangkok)) +
-          '</strong> (ทั้งหมด <strong>' +
-          dueItems.length +
-          '</strong> รายการ)' +
-        '</p>' +
-        htmlCards.join('') +
-        '<div style="margin-top:16px;text-align:center;">' +
-          '<a href="https://smetaltech027-afk.github.io/measuring-instrument-system/?view=admin" ' +
-            'style="display:inline-block;padding:10px 18px;background:#246a82;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">' +
-            'เปิดดูทะเบียนในระบบ Admin' +
-          '</a>' +
-        '</div>' +
-        '<p style="font-size:12px;color:#5d7788;line-height:1.5;margin:16px 0 0 0;border-top:1px solid #edf3f5;padding-top:12px;">' +
-          'หมายเหตุ: ระบบแจ้งเตือนล่วงหน้า 7 วัน (หรือส่งชดเชย 1 ครั้งหากเหลือ 1–6 วัน) และจะเริ่มรอบใหม่เมื่อ Admin อัปเดตวันหมดอายุในระบบ' +
-        '</p>' +
-      '</div>' +
-    '</div>';
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f7f8" style="width:100%;background-color:#f4f7f8;margin:0;padding:0;">' +
+      '<tr>' +
+        '<td align="center" style="padding:16px 12px 24px 12px;">' +
+          '<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" align="center"><tr><td><![endif]-->' +
+          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;border-collapse:collapse;background-color:#ffffff;border:1px solid #d3e0e6;">' +
+            '<tr>' +
+              '<td bgcolor="#173447" style="background-color:#173447;padding:18px 20px;">' +
+                '<div style="font-family:' +
+                  fontMain +
+                  ';font-size:12px;line-height:18px;color:#b8d4df;margin:0 0 4px 0;mso-line-height-rule:exactly;">บริษัท เอส เมททอล เทค จำกัด &bull; เอกสาร RG-PD-001</div>' +
+                '<div style="font-family:' +
+                  fontMain +
+                  ';font-size:18px;font-weight:bold;line-height:26px;color:#ffffff;margin:0;mso-line-height-rule:exactly;">แจ้งเตือนเครื่องมือวัดใกล้ครบกำหนด</div>' +
+              '</td>' +
+            '</tr>' +
+            '<tr>' +
+              '<td bgcolor="#ffffff" style="background-color:#ffffff;padding:20px;">' +
+                '<p style="font-family:' +
+                  fontMain +
+                  ';font-size:14px;line-height:22px;color:#173447;margin:0 0 16px 0;mso-line-height-rule:exactly;">' +
+                  'รายการเครื่องมือวัดที่ใกล้ครบกำหนดวันหมดอายุ ประจำวันที่ ' +
+                  '<strong style="white-space:nowrap;">' +
+                  escapeHtml_(formatIsoToDmy_(todayBangkok)) +
+                  '</strong> (ทั้งหมด <strong>' +
+                  dueItems.length +
+                  '</strong> รายการ)' +
+                '</p>' +
+                htmlCards.join('') +
+                '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-top:18px;">' +
+                  '<tr>' +
+                    '<td align="center">' +
+                      '<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="border-collapse:collapse;">' +
+                        '<tr>' +
+                          '<td bgcolor="#246a82" style="background-color:#246a82;padding:11px 24px;text-align:center;">' +
+                            '<a href="https://smetaltech027-afk.github.io/measuring-instrument-system/?view=admin" ' +
+                              'style="font-family:' +
+                              fontMain +
+                              ';font-size:14px;font-weight:bold;line-height:20px;color:#ffffff;text-decoration:none;display:inline-block;">' +
+                              'เปิดดูทะเบียนในระบบ Admin' +
+                            '</a>' +
+                          '</td>' +
+                        '</tr>' +
+                      '</table>' +
+                    '</td>' +
+                  '</tr>' +
+                '</table>' +
+                '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-top:20px;">' +
+                  '<tr>' +
+                    '<td style="border-top:1px solid #e4edf1;padding-top:14px;font-family:' +
+                      fontMain +
+                      ';font-size:12px;line-height:20px;color:#5d7788;mso-line-height-rule:exactly;">' +
+                      'หมายเหตุ: ระบบแจ้งเตือนล่วงหน้า 7 วัน (หรือส่งชดเชย 1 ครั้งหากเหลือ 1&ndash;6 วัน) และจะเริ่มรอบใหม่เมื่อ Admin อัปเดตวันหมดอายุในระบบ' +
+                    '</td>' +
+                  '</tr>' +
+                '</table>' +
+              '</td>' +
+            '</tr>' +
+          '</table>' +
+          '<!--[if mso]></td></tr></table><![endif]-->' +
+        '</td>' +
+      '</tr>' +
+    '</table>';
 
   return {
     subject: subject,
