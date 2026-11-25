@@ -42,6 +42,9 @@ export function HomePage({ onOpenInstrumentByToken, onNavigateAdmin }: HomePageP
 
   const handleCodeLookup = async (event: FormEvent) => {
     event.preventDefault();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     await lookupAndOpenCode(codeInput);
   };
 

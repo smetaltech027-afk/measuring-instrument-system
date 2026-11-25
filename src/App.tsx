@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { ShieldUserIcon } from './components/Icons';
 import { getVerifiedAdminSession } from './lib/supabase';
 import { AdminLoginPage } from './pages/AdminLoginPage';
@@ -31,6 +31,18 @@ function pushRouteUrl(nextUrl: string): void {
   window.history.pushState({}, '', nextUrl);
 }
 
+function blurActiveElement(): void {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+}
+
+function scrollPageToTop(): void {
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
 export function App() {
   const [route, setRoute] = useState<AppRoute>(() => parseLocationRoute());
   const [preloadedInstrument, setPreloadedInstrument] = useState<PublicInstrument | null>(null);
@@ -61,7 +73,21 @@ export function App() {
     }
   }, [route.view, syncAdminSession]);
 
+  const routeKey = route.view === 'instrument' ? `instrument:${route.token}` : route.view;
+
+  useLayoutEffect(() => {
+    scrollPageToTop();
+    const rafId = window.requestAnimationFrame(scrollPageToTop);
+    // iOS Safari may restore scroll after the virtual keyboard finishes dismissing
+    const timerId = window.setTimeout(scrollPageToTop, 140);
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(timerId);
+    };
+  }, [routeKey]);
+
   const navigateHome = useCallback(() => {
+    blurActiveElement();
     const basePath = import.meta.env.BASE_URL || '/';
     pushRouteUrl(basePath);
     setPreloadedInstrument(null);
@@ -69,6 +95,7 @@ export function App() {
   }, []);
 
   const navigateInstrument = useCallback((token: string, preloaded?: PublicInstrument) => {
+    blurActiveElement();
     const basePath = import.meta.env.BASE_URL || '/';
     pushRouteUrl(`${basePath}?instrument=${encodeURIComponent(token)}`);
     setPreloadedInstrument(preloaded ?? null);
@@ -76,6 +103,7 @@ export function App() {
   }, []);
 
   const navigateAdmin = useCallback(() => {
+    blurActiveElement();
     const basePath = import.meta.env.BASE_URL || '/';
     pushRouteUrl(`${basePath}?view=admin`);
     setRoute({ view: 'admin' });
