@@ -21,6 +21,8 @@ export function Modal({ open, title, onClose, children, footer, wide = false }: 
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -32,14 +34,17 @@ export function Modal({ open, title, onClose, children, footer, wide = false }: 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
 
-    // Move initial focus cleanly into the modal panel for keyboard users
+    // Move initial focus cleanly into the modal panel only once when opened
     const focusTimer = window.setTimeout(() => {
-      panelRef.current?.focus();
+      const panel = panelRef.current;
+      if (panel && !panel.contains(document.activeElement)) {
+        panel.focus();
+      }
     }, 0);
 
     return () => {
@@ -48,7 +53,7 @@ export function Modal({ open, title, onClose, children, footer, wide = false }: 
       document.body.style.overflow = prevOverflow;
       previousFocusRef.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
