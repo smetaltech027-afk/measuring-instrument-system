@@ -5,6 +5,7 @@ import {
   type ValidationErrors
 } from '../lib/validation';
 import type { Instrument, InstrumentFormValues } from '../types/instrument';
+import { AlertTriangleIcon } from './Icons';
 import { InstrumentPlaceholder } from './InstrumentPlaceholder';
 import { Modal } from './Modal';
 
@@ -66,6 +67,7 @@ export function InstrumentFormModal({
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -75,6 +77,7 @@ export function InstrumentFormModal({
       setPhotoError(null);
       setSubmitError(null);
       setSaving(false);
+      setDiscardConfirmOpen(false);
     }
   }, [open, initialInstrument]);
 
@@ -106,12 +109,10 @@ export function InstrumentFormModal({
   }, [open, isDirty]);
 
   const handleRequestClose = () => {
-    if (saving) return;
+    if (saving || discardConfirmOpen) return;
     if (isDirty) {
-      const confirmed = window.confirm(
-        'มีข้อมูลที่ยังไม่ได้บันทึก ต้องการปิดหน้าต่างนี้และยกเลิกการแก้ไขใช่ไหมคะ?'
-      );
-      if (!confirmed) return;
+      setDiscardConfirmOpen(true);
+      return;
     }
     onClose();
   };
@@ -164,14 +165,15 @@ export function InstrumentFormModal({
   const previewSrc = photoPreviewUrl ?? currentImageUrl ?? null;
 
   return (
-    <Modal
-      open={open}
-      title={
-        mode === 'create'
-          ? 'เพิ่มเครื่องมือวัดใหม่'
-          : `แก้ไขเครื่องมือวัด ${initialInstrument?.instrument_code ?? ''}`
-      }
-      onClose={handleRequestClose}
+    <>
+      <Modal
+        open={open}
+        title={
+          mode === 'create'
+            ? 'เพิ่มเครื่องมือวัดใหม่'
+            : `แก้ไขเครื่องมือวัด ${initialInstrument?.instrument_code ?? ''}`
+        }
+        onClose={handleRequestClose}
       footer={
         <>
           <button
@@ -403,6 +405,44 @@ export function InstrumentFormModal({
           </div>
         </div>
       </form>
-    </Modal>
+      </Modal>
+
+      <Modal
+        open={discardConfirmOpen}
+        title="ยืนยันการปิดหน้าต่าง"
+        onClose={() => setDiscardConfirmOpen(false)}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={() => setDiscardConfirmOpen(false)}
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              className="btn btn--danger"
+              onClick={() => {
+                setDiscardConfirmOpen(false);
+                onClose();
+              }}
+            >
+              ปิดโดยไม่บันทึก
+            </button>
+          </>
+        }
+      >
+        <div className="dialog-feedback">
+          <div className="dialog-icon dialog-icon--warning" aria-hidden="true">
+            <AlertTriangleIcon size={26} />
+          </div>
+          <div className="dialog-heading">มีข้อมูลที่ยังไม่ได้บันทึก</div>
+          <p className="dialog-desc">
+            ต้องการปิดหน้าต่างนี้และยกเลิกข้อมูลที่เพิ่งแก้ไขใช่หรือไม่?
+          </p>
+        </div>
+      </Modal>
+    </>
   );
 }

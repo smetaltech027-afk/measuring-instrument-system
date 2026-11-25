@@ -165,3 +165,13 @@ export function CheckCircleIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function AlertTriangleIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M10.3 3.9L1.8 18.5a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+      <path d="M12 9v4.5" />
+      <path d="M12 17.5h.01" />
+    </IconBase>
+  );
+}

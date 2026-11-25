@@ -127,6 +127,11 @@
   color: var(--brand-indigo);
 }
 
+.dialog-icon--warning {
+  background-color: var(--amber-bg);
+  color: var(--amber-text);
+}
+
 .dialog-heading {
   font-size: 1.08rem;
   font-weight: 700;
