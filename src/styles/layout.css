@@ -11,8 +11,10 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  background-color: rgba(255, 255, 255, 0.94);
+  background-color: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(8px);
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg, #1e3a8a 0%, #312e81 55%, #f97316 100%) 1 0 0 0;
   border-bottom: 1px solid var(--border-default);
   padding-top: env(safe-area-inset-top);
 }
@@ -112,7 +114,7 @@
   justify-content: center;
 }
 
-/* Precision Workshop Hero */
+/* Precision Workshop Hero — Theme 3 Indigo Header + Safety Orange Actions */
 .hero-workshop {
   position: relative;
   background-color: var(--bg-surface);
@@ -122,14 +124,20 @@
   overflow: hidden;
 }
 
-/* Subtle caliper graduation ruler along top edge */
+/* Vibrant Indigo Banner with Caliper Graduation Ruler */
+.hero-banner {
+  background-color: var(--brand-indigo);
+  background-image: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+  color: #ffffff;
+}
+
 .hero-ruler {
   height: 12px;
-  background-color: var(--brand-navy);
+  background-color: rgba(15, 23, 42, 0.25);
   background-image: repeating-linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.55) 0,
-      rgba(255, 255, 255, 0.55) 1px,
+      rgba(255, 255, 255, 0.45) 0,
+      rgba(255, 255, 255, 0.45) 1px,
       transparent 1px,
       transparent 10px
     ),
@@ -145,11 +153,15 @@
   background-repeat: no-repeat;
 }
 
+.hero-banner-content {
+  padding: 22px 20px 24px;
+}
+
 .hero-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 28px;
-  padding: 28px 20px;
+  gap: 20px;
+  padding: 22px 20px 24px;
 }
 
 @media (min-width: 820px) {
@@ -159,11 +171,14 @@
   .page-main {
     padding: 32px 24px 56px;
   }
+  .hero-banner-content {
+    padding: 28px 36px 30px;
+  }
   .hero-grid {
-    grid-template-columns: 1.25fr 0.95fr;
+    grid-template-columns: 1.05fr 1fr;
     align-items: stretch;
-    gap: 36px;
-    padding: 40px 36px;
+    gap: 28px;
+    padding: 28px 36px 34px;
   }
 }
 
@@ -171,24 +186,32 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--brand-primary);
-  margin-bottom: 12px;
+  color: #fed7aa;
+  margin-bottom: 8px;
 }
 
 .hero-heading {
-  font-size: clamp(1.65rem, 3.2vw, 2.3rem);
+  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 12px;
+  color: #ffffff;
+  margin-bottom: 8px;
 }
 
 .hero-desc {
-  color: var(--ink-secondary);
-  max-width: 54ch;
-  font-size: 0.98rem;
-  margin-bottom: 24px;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 60ch;
+  font-size: 0.95rem;
+  margin-bottom: 0;
+}
+
+.hero-action-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
 }
 
 .hero-primary-action {
@@ -196,6 +219,16 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+}
+
+.hero-primary-action .btn--primary-lg {
+  width: 100%;
+}
+
+@media (min-width: 520px) {
+  .hero-primary-action .btn--primary-lg {
+    width: auto;
+  }
 }
 
 .lookup-panel {
@@ -318,9 +351,9 @@
 }
 
 .kpi-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-left: 4px solid var(--brand-primary);
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-left: 4px solid var(--brand-indigo);
   border-radius: var(--radius-md);
   padding: 14px 16px;
   box-shadow: var(--shadow-sm);
@@ -330,25 +363,42 @@
 }
 
 .kpi-card:hover {
-  border-color: var(--brand-primary);
-  background-color: #fafcfd;
+  border-color: var(--brand-indigo);
+  transform: translateY(-1px);
 }
 
 .kpi-card--amber {
+  background-color: #fefce8;
+  border-color: #fde047;
   border-left-color: var(--amber-accent);
 }
 
+.kpi-card--amber:hover {
+  border-color: var(--amber-accent);
+}
+
 .kpi-card--red {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
   border-left-color: var(--red-accent);
 }
 
+.kpi-card--red:hover {
+  border-color: var(--red-accent);
+}
+
 .kpi-card--green {
+  background-color: #ecfdf5;
+  border-color: #6ee7b7;
   border-left-color: var(--green-accent);
 }
 
+.kpi-card--green:hover {
+  border-color: var(--green-accent);
+}
+
 .kpi-card--active {
-  background-color: var(--bg-tint);
-  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--brand-indigo);
 }
 
 .kpi-label {

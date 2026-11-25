@@ -48,9 +48,9 @@ export function HomePage({ onOpenInstrumentByToken, onNavigateAdmin }: HomePageP
   return (
     <main id="main-content" className="page-main">
       <section className="hero-workshop" aria-labelledby="home-title">
-        <div className="hero-ruler" aria-hidden="true" />
-        <div className="hero-grid">
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="hero-banner">
+          <div className="hero-ruler" aria-hidden="true" />
+          <div className="hero-banner-content">
             <div className="hero-eyebrow">
               <CaliperIcon size={16} />
               <span>บริษัท เอส เมททอล เทค จำกัด • เอกสาร RG-PD-001</span>
@@ -60,9 +60,13 @@ export function HomePage({ onOpenInstrumentByToken, onNavigateAdmin }: HomePageP
             </h1>
             <p className="hero-desc">
               ตรวจสอบสถานะเครื่องมือวัด วันที่ Compare / Calibration และวันหมดอายุได้ทันที
-              โดยสแกน QR Code บนตัวเครื่อง หรือใช้กล้องมือถือทั่วไปเปิดลิงก์จากฉลากโดยตรง
+              โดยสแกน QR Code บนตัวเครื่อง หรือค้นหาด้วยรหัสเครื่องมือ
             </p>
+          </div>
+        </div>
 
+        <div className="hero-grid">
+          <div className="hero-action-panel">
             <div className="hero-primary-action">
               <button
                 type="button"
@@ -77,6 +81,9 @@ export function HomePage({ onOpenInstrumentByToken, onNavigateAdmin }: HomePageP
                 เข้าสู่ระบบ Admin
               </button>
             </div>
+            <p className="field-hint">
+              รองรับฉลาก QR แบบสั้น (<span className="mono">MI-001</span>) และลิงก์ QR เต็มของระบบ
+            </p>
           </div>
 
           <div className="lookup-panel" aria-labelledby="lookup-title">
