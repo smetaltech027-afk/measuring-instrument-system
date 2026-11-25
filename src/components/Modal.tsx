@@ -11,15 +11,16 @@ interface ModalProps {
   wide?: boolean;
 }
 
-// Reference-counted body scroll lock so stacked modals never leave overflow: hidden stuck
+// Reference-counted body scroll lock & Escape stack so stacked modals close one layer at a time
 let activeModalCount = 0;
 let originalBodyOverflow = '';
+const modalCloseStack: Array<() => void> = [];
 
 /**
  * Portal-based Modal compliant with Mobile & iOS Safari rules:
  * - Rendered in document.body to avoid ancestor transform/filter issues
  * - Uses 100svh max-height + safe-area insets + internal scroll body
- * - Handles Escape key, reference-counted background scroll lock, and focus restoration
+ * - Handles Escape key (top-most modal only), reference-counted scroll lock, and focus restoration
  */
 export function Modal({ open, title, onClose, children, footer, wide = false }: ModalProps) {
   const titleId = useId();
@@ -38,10 +39,13 @@ export function Modal({ open, title, onClose, children, footer, wide = false }: 
     }
     activeModalCount += 1;
 
+    const closeSelf = () => onCloseRef.current();
+    modalCloseStack.push(closeSelf);
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && modalCloseStack[modalCloseStack.length - 1] === closeSelf) {
         event.preventDefault();
-        onCloseRef.current();
+        closeSelf();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -57,6 +61,8 @@ export function Modal({ open, title, onClose, children, footer, wide = false }: 
     return () => {
       window.clearTimeout(focusTimer);
       window.removeEventListener('keydown', handleKeyDown);
+      const idx = modalCloseStack.lastIndexOf(closeSelf);
+      if (idx >= 0) modalCloseStack.splice(idx, 1);
       activeModalCount = Math.max(0, activeModalCount - 1);
       if (activeModalCount === 0) {
         document.body.style.overflow = originalBodyOverflow;

@@ -7,7 +7,9 @@ import {
   getPopulatedInspectionDates
 } from '../lib/dateRules';
 import type { InstrumentDateHistory, PublicInstrument } from '../types/instrument';
+import { SearchIcon } from './Icons';
 import { InstrumentPlaceholder } from './InstrumentPlaceholder';
+import { Modal } from './Modal';
 import { ExpiryBadge, RegistryStatusTag } from './StatusBadge';
 
 interface InstrumentDetailCardProps {
@@ -26,9 +28,11 @@ export function InstrumentDetailCard({
   showAdminMetadata = false
 }: InstrumentDetailCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
+    setLightboxOpen(false);
   }, [instrument.image_url, instrument.public_token]);
 
   const expiryState = evaluateExpiryState(instrument.expiry_date);
@@ -40,13 +44,24 @@ export function InstrumentDetailCard({
       <div className="detail-layout">
         <div className="detail-photo-frame">
           {shouldShowImage ? (
-            <img
-              src={instrument.image_url!}
-              alt={`รูปเครื่องมือวัด ${instrument.name} (${instrument.instrument_code})`}
-              width={320}
-              height={240}
-              onError={() => setImageFailed(true)}
-            />
+            <button
+              type="button"
+              className="detail-photo-btn"
+              onClick={() => setLightboxOpen(true)}
+              aria-label={`ขยายดูรูปขนาดใหญ่ของ ${instrument.name} (${instrument.instrument_code})`}
+            >
+              <img
+                src={instrument.image_url!}
+                alt={`รูปเครื่องมือวัด ${instrument.name} (${instrument.instrument_code})`}
+                width={320}
+                height={240}
+                onError={() => setImageFailed(true)}
+              />
+              <span className="detail-photo-zoom-hint" aria-hidden="true">
+                <SearchIcon size={13} />
+                ขยาย
+              </span>
+            </button>
           ) : (
             <InstrumentPlaceholder name={instrument.name} code={instrument.instrument_code} />
           )}
@@ -175,6 +190,31 @@ export function InstrumentDetailCard({
             </ul>
           )}
         </section>
+      ) : null}
+      {shouldShowImage ? (
+        <Modal
+          open={lightboxOpen}
+          title={`${instrument.instrument_code} — ${instrument.name}`}
+          onClose={() => setLightboxOpen(false)}
+          wide
+          footer={
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={() => setLightboxOpen(false)}
+            >
+              ปิดรูปขยาย
+            </button>
+          }
+        >
+          <div className="lightbox-stage">
+            <img
+              src={instrument.image_url!}
+              alt={`รูปขนาดใหญ่ของ ${instrument.name} (${instrument.instrument_code})`}
+              className="lightbox-img"
+            />
+          </div>
+        </Modal>
       ) : null}
     </div>
   );
