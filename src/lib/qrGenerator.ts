@@ -17,16 +17,23 @@ export async function generateQrDataUrl(payload: string, width = 300): Promise<s
   });
 }
 
+export interface RenderedQrCard {
+  code: string;
+  filename: string;
+  blob: Blob;
+  previewUrl: string;
+}
+
 /**
- * Render a compact downloadable PNG label containing ONLY the QR code (encoding MI-xxx)
- * and the human-readable code (MI-xxx) underneath — matching the 9x9 mm A4 cut-sheet style.
+ * Render a compact PNG label Blob containing ONLY the QR code (encoding MI-xxx)
+ * and the human-readable code (MI-xxx) underneath — compatible with iOS Safari & Desktop.
  */
-export async function downloadInstrumentQrPng(instrument: {
+export async function renderInstrumentQrCardBlob(instrument: {
   instrument_code: string;
   public_token: string;
   name: string;
   location: string | null;
-}): Promise<string> {
+}): Promise<RenderedQrCard> {
   const compactPayload = buildCompactQrPayload(instrument.instrument_code);
   const qrDataUrl = await generateQrDataUrl(compactPayload, 300);
 
@@ -66,14 +73,64 @@ export async function downloadInstrumentQrPng(instrument: {
   ctx.textBaseline = 'middle';
   ctx.fillText(compactPayload, canvas.width / 2, 272);
 
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) resolve(result);
+      else reject(new Error('แปลงภาพ QR เป็นไฟล์ PNG ไม่สำเร็จ'));
+    }, 'image/png');
+  });
+
   const filename = `QR_${compactPayload}.png`;
-  const dataUrl = canvas.toDataURL('image/png');
+  const previewUrl = URL.createObjectURL(blob);
+
+  return {
+    code: compactPayload,
+    filename,
+    blob,
+    previewUrl
+  };
+}
+
+/**
+ * Trigger a Blob-backed file download (avoids iOS Safari's `data:` URI navigation bug).
+ * Keeps the object URL alive for 60s so iOS Safari's confirmation dialog ("ดู / ดาวน์โหลด") works reliably.
+ */
+export function downloadQrBlob(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.href = dataUrl;
+  link.href = objectUrl;
   link.download = filename;
+  link.rel = 'noopener';
   document.body.appendChild(link);
   link.click();
   link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+}
 
-  return filename;
+export function canUseNativeFileShare(blob: Blob, filename: string): boolean {
+  if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') {
+    return false;
+  }
+  try {
+    const file = new File([blob], filename, { type: 'image/png' });
+    return typeof navigator.canShare === 'function' ? navigator.canShare({ files: [file] }) : false;
+  } catch {
+    return false;
+  }
+}
+
+export async function shareQrBlob(blob: Blob, filename: string): Promise<'shared' | 'cancelled'> {
+  const file = new File([blob], filename, { type: 'image/png' });
+  try {
+    await navigator.share({
+      files: [file],
+      title: filename
+    });
+    return 'shared';
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return 'cancelled';
+    }
+    throw err;
+  }
 }

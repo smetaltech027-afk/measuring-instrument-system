@@ -21,7 +21,13 @@ import {
   formatDateTimeBangkok,
   getBangkokTodayIso
 } from '../lib/dateRules';
-import { downloadInstrumentQrPng } from '../lib/qrGenerator';
+import {
+  canUseNativeFileShare,
+  downloadQrBlob,
+  renderInstrumentQrCardBlob,
+  shareQrBlob,
+  type RenderedQrCard
+} from '../lib/qrGenerator';
 import {
   createInstrument,
   getVerifiedAdminSession,
@@ -102,6 +108,7 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportConfirmOpen, setExportConfirmOpen] = useState(false);
   const [downloadingQrId, setDownloadingQrId] = useState<string | null>(null);
+  const [qrPreview, setQrPreview] = useState<(RenderedQrCard & { name: string }) | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Instrument | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [successPopup, setSuccessPopup] = useState<{ title: string; message: string } | null>(
@@ -330,15 +337,25 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
     }
   };
 
+  const closeQrPreview = useCallback(() => {
+    setQrPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev.previewUrl);
+      return null;
+    });
+  }, []);
+
   const handleDownloadSingleQr = async (inst: Instrument) => {
     setDownloadingQrId(inst.id);
     try {
-      const filename = await downloadInstrumentQrPng(inst);
-      setNotice({ kind: 'success', text: `ดาวน์โหลดภาพ QR (${filename}) เรียบร้อยแล้วค่ะ` });
+      const rendered = await renderInstrumentQrCardBlob(inst);
+      setQrPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev.previewUrl);
+        return { ...rendered, name: inst.name };
+      });
     } catch (err) {
       setNotice({
         kind: 'error',
-        text: err instanceof Error ? err.message : 'ดาวน์โหลดภาพ QR ไม่สำเร็จ'
+        text: err instanceof Error ? err.message : 'สร้างภาพ QR ไม่สำเร็จ'
       });
     } finally {
       setDownloadingQrId(null);
@@ -959,6 +976,83 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
               <strong>{deleteTarget.name}</strong>
               {deleteTarget.location ? ` (${deleteTarget.location})` : ''} จะถูกนำออกจากหน้า
               Dashboard, ไฟล์ Export Excel, ฉลาก QR และการแจ้งเตือนอีเมล (ประวัติการสอบเทียบเดิมยังถูกเก็บไว้ในฐานข้อมูลค่ะ)
+            </p>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Single QR Preview & Save/Download Modal (iOS Safari & Desktop compatible) */}
+      <Modal
+        open={Boolean(qrPreview)}
+        title={qrPreview ? `ฉลาก QR ${qrPreview.code}` : 'ฉลาก QR'}
+        onClose={closeQrPreview}
+        footer={
+          qrPreview ? (
+            <>
+              <button type="button" className="btn btn--secondary" onClick={closeQrPreview}>
+                ปิด
+              </button>
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => {
+                  downloadQrBlob(qrPreview.blob, qrPreview.filename);
+                  setNotice({
+                    kind: 'success',
+                    text: `ดาวน์โหลดภาพ QR (${qrPreview.filename}) เรียบร้อยแล้วค่ะ`
+                  });
+                }}
+              >
+                <DownloadIcon size={18} />
+                ดาวน์โหลดไฟล์ PNG
+              </button>
+              {canUseNativeFileShare(qrPreview.blob, qrPreview.filename) ? (
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={async () => {
+                    try {
+                      await shareQrBlob(qrPreview.blob, qrPreview.filename);
+                    } catch (err) {
+                      setNotice({
+                        kind: 'error',
+                        text:
+                          err instanceof Error
+                            ? err.message
+                            : 'ไม่สามารถเปิดเมนูแชร์ได้ กรุณากดดาวน์โหลดไฟล์ PNG แทนค่ะ'
+                      });
+                    }
+                  }}
+                >
+                  <QrScanIcon size={18} />
+                  บันทึก / แชร์รูป
+                </button>
+              ) : null}
+            </>
+          ) : null
+        }
+      >
+        {qrPreview ? (
+          <div className="dialog-feedback">
+            <img
+              src={qrPreview.previewUrl}
+              alt={`ฉลาก QR ของ ${qrPreview.code}`}
+              width={208}
+              height={256}
+              style={{
+                width: '208px',
+                height: '256px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-default)',
+                backgroundColor: '#ffffff',
+                display: 'block'
+              }}
+            />
+            <div className="dialog-heading">{qrPreview.name}</div>
+            <p className="dialog-desc">
+              บน iPhone สามารถกดปุ่ม <strong>“บันทึก / แชร์รูป”</strong>, กด{' '}
+              <strong>“ดาวน์โหลดไฟล์ PNG”</strong> หรือแตะค้างที่รูปแล้วเลือก{' '}
+              <strong>“บันทึกลงแอปรูปภาพ”</strong> ได้เลยค่ะ
             </p>
           </div>
         ) : null}

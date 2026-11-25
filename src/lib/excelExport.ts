@@ -137,7 +137,7 @@ export async function exportFullRegistryExcel(instruments: Instrument[]): Promis
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
 
   return filename;
 }
