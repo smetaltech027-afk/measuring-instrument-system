@@ -215,7 +215,14 @@ export function App() {
       ) : null}
 
       <footer className="app-footer">
-        บริษัท เอส เมททอล เทค จำกัด • ระบบทะเบียนเครื่องมือวัด (<span translate="no">RG-PD-001</span>)
+        <p className="app-footer-line app-footer-company">บริษัท เอส เมททอล เทค จำกัด</p>
+        <p className="app-footer-line">
+          ระบบทะเบียนเครื่องมือวัด (
+          <span className="app-footer-doc" translate="no">
+            RG-PD-001
+          </span>
+          )
+        </p>
       </footer>
     </div>
   );
