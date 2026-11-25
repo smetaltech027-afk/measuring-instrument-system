@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BellIcon,
+  CheckCircleIcon,
   DownloadIcon,
   EditIcon,
   LogoutIcon,
   PlusIcon,
   PrinterIcon,
-  QrScanIcon
+  QrScanIcon,
+  TrashIcon
 } from '../components/Icons';
 import { InstrumentDetailCard } from '../components/InstrumentDetailCard';
 import { InstrumentFormModal } from '../components/InstrumentFormModal';
@@ -27,6 +29,7 @@ import {
   listInstrumentDateHistory,
   listRecentReminderLogs,
   signOutAdmin,
+  softDeleteInstrument,
   updateInstrument
 } from '../lib/supabase';
 import { buildWorkerImageUrl, uploadInstrumentImage } from '../lib/workerApi';
@@ -97,7 +100,13 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
   const [reminderError, setReminderError] = useState<string | null>(null);
 
   const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportConfirmOpen, setExportConfirmOpen] = useState(false);
   const [downloadingQrId, setDownloadingQrId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Instrument | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [successPopup, setSuccessPopup] = useState<{ title: string; message: string } | null>(
+    null
+  );
 
   const todayIso = getBangkokTodayIso();
 
@@ -259,9 +268,9 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
     if (photoWarning) {
       setNotice({ kind: 'error', text: photoWarning });
     } else {
-      setNotice({
-        kind: 'success',
-        text:
+      setSuccessPopup({
+        title: 'บันทึกข้อมูลเรียบร้อย',
+        message:
           formModalState.mode === 'create'
             ? `เพิ่มเครื่องมือวัด “${saved.name}” (${saved.instrument_code}) เรียบร้อยแล้วค่ะ`
             : `บันทึกการแก้ไข “${saved.name}” (${saved.instrument_code}) เรียบร้อยแล้วค่ะ`
@@ -269,11 +278,39 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleting(true);
+    setNotice(null);
+    try {
+      await softDeleteInstrument(target.id);
+      if (selectedInstrument?.id === target.id) {
+        setSelectedInstrument(null);
+      }
+      setDeleteTarget(null);
+      await fetchInstruments();
+      setSuccessPopup({
+        title: 'ลบรายการเรียบร้อย',
+        message: `ลบเครื่องมือวัด “${target.name}” (${target.instrument_code}) ออกจากทะเบียนเรียบร้อยแล้วค่ะ`
+      });
+    } catch (err) {
+      setDeleteTarget(null);
+      setNotice({
+        kind: 'error',
+        text: err instanceof Error ? err.message : 'ไม่สามารถลบรายการเครื่องมือวัดได้'
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleExportExcel = async () => {
+    setExportConfirmOpen(false);
     setExportingExcel(true);
     setNotice(null);
     try {
-      // Always export ALL instruments regardless of active UI filters
+      // Always export ALL active instruments regardless of active UI filters
       const [{ exportFullRegistryExcel }, allLatest] = await Promise.all([
         import('../lib/excelExport'),
         listAllInstruments()
@@ -342,7 +379,7 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
           <button
             type="button"
             className="btn btn--secondary"
-            onClick={handleExportExcel}
+            onClick={() => setExportConfirmOpen(true)}
             disabled={exportingExcel || loading}
           >
             <DownloadIcon size={18} />
@@ -642,6 +679,15 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
                           </button>
                           <button
                             type="button"
+                            className="btn btn--danger-soft btn--sm"
+                            onClick={() => setDeleteTarget(inst)}
+                            aria-label={`ลบ ${inst.name}`}
+                          >
+                            <TrashIcon size={15} />
+                            ลบ
+                          </button>
+                          <button
+                            type="button"
                             className="btn btn--ghost btn--sm"
                             onClick={() => handleDownloadSingleQr(inst)}
                             disabled={downloadingQrId === inst.id}
@@ -721,6 +767,14 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
                     </button>
                     <button
                       type="button"
+                      className="btn btn--danger-soft btn--sm"
+                      onClick={() => setDeleteTarget(inst)}
+                    >
+                      <TrashIcon size={15} />
+                      ลบ
+                    </button>
+                    <button
+                      type="button"
                       className="btn btn--ghost btn--sm"
                       onClick={() => handleDownloadSingleQr(inst)}
                       disabled={downloadingQrId === inst.id}
@@ -757,6 +811,14 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
               >
                 <QrScanIcon size={18} />
                 ดาวน์โหลด QR รายเครื่อง
+              </button>
+              <button
+                type="button"
+                className="btn btn--danger-soft"
+                onClick={() => setDeleteTarget(selectedInstrument)}
+              >
+                <TrashIcon size={18} />
+                ลบรายการ
               </button>
               <button
                 type="button"
@@ -808,7 +870,125 @@ export function AdminDashboardPage({ adminEmail, onSignedOut }: AdminDashboardPa
         open={printSheetOpen}
         instruments={instruments}
         onClose={() => setPrintSheetOpen(false)}
+        onPrintCompleted={(count) => {
+          setPrintSheetOpen(false);
+          setSuccessPopup({
+            title: 'สั่งพิมพ์ QR Code เรียบร้อย',
+            message: `ส่งคำสั่งพิมพ์ฉลาก QR Code จำนวน ${count} รายการเรียบร้อยแล้วค่ะ`
+          });
+        }}
       />
+
+      {/* Confirm Export Excel Popup */}
+      <Modal
+        open={exportConfirmOpen}
+        title="ยืนยันการ Export Excel File"
+        onClose={() => setExportConfirmOpen(false)}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={() => setExportConfirmOpen(false)}
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={handleExportExcel}
+              disabled={exportingExcel}
+            >
+              OK
+            </button>
+          </>
+        }
+      >
+        <div className="dialog-feedback">
+          <div className="dialog-icon dialog-icon--info" aria-hidden="true">
+            <DownloadIcon size={24} />
+          </div>
+          <div className="dialog-heading">ต้องการ Export Excel File ใช่หรือไม่?</div>
+          <p className="dialog-desc">
+            ระบบจะส่งออกทะเบียนเครื่องมือวัดฉบับเต็มทั้งหมด{' '}
+            <strong className="tabular-nums">{instruments.length}</strong> รายการตามแบบฟอร์ม{' '}
+            <span translate="no">RG-PD-001</span> (พร้อมคอลัมน์รหัส) ค่ะ
+          </p>
+        </div>
+      </Modal>
+
+      {/* Confirm Delete Instrument Popup */}
+      <Modal
+        open={Boolean(deleteTarget)}
+        title="ยืนยันการลบรายการเครื่องมือวัด"
+        onClose={() => {
+          if (!deleting) setDeleteTarget(null);
+        }}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              className="btn btn--danger"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+            >
+              <TrashIcon size={18} />
+              {deleting ? 'กำลังลบ…' : 'ยืนยันลบรายการ'}
+            </button>
+          </>
+        }
+      >
+        {deleteTarget ? (
+          <div className="dialog-feedback">
+            <div className="dialog-icon dialog-icon--danger" aria-hidden="true">
+              <TrashIcon size={24} />
+            </div>
+            <div className="dialog-heading">
+              ต้องการลบเครื่องมือวัด <span className="mono">{deleteTarget.instrument_code}</span>{' '}
+              ใช่หรือไม่?
+            </div>
+            <p className="dialog-desc">
+              <strong>{deleteTarget.name}</strong>
+              {deleteTarget.location ? ` (${deleteTarget.location})` : ''} จะถูกนำออกจากหน้า
+              Dashboard, ไฟล์ Export Excel, ฉลาก QR และการแจ้งเตือนอีเมล (ประวัติการสอบเทียบเดิมยังถูกเก็บไว้ในฐานข้อมูลค่ะ)
+            </p>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* Success Feedback Popup (Save / Print QR / Delete) */}
+      <Modal
+        open={Boolean(successPopup)}
+        title={successPopup?.title ?? 'ดำเนินการเรียบร้อย'}
+        onClose={() => setSuccessPopup(null)}
+        footer={
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => setSuccessPopup(null)}
+          >
+            ตกลง
+          </button>
+        }
+      >
+        {successPopup ? (
+          <div className="dialog-feedback">
+            <div className="dialog-icon dialog-icon--success" aria-hidden="true">
+              <CheckCircleIcon size={28} />
+            </div>
+            <div className="dialog-heading">{successPopup.title}</div>
+            <p className="dialog-desc">{successPopup.message}</p>
+          </div>
+        ) : null}
+      </Modal>
 
       {/* Reminder Delivery Log Modal */}
       <Modal

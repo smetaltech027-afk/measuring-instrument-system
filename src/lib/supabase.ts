@@ -93,6 +93,7 @@ export async function listAllInstruments(): Promise<Instrument[]> {
   const { data, error } = await supabase
     .from('instruments')
     .select('*')
+    .is('deleted_at', null)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true });
 
@@ -100,6 +101,19 @@ export async function listAllInstruments(): Promise<Instrument[]> {
     throw new Error(`ไม่สามารถโหลดข้อมูลทะเบียนเครื่องมือวัดได้ (${error.message})`);
   }
   return (data ?? []) as Instrument[];
+}
+
+export async function softDeleteInstrument(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from('instruments')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('deleted_at', null);
+
+  if (error) {
+    throw new Error(`ไม่สามารถลบรายการเครื่องมือวัดได้ (${error.message})`);
+  }
 }
 
 export async function createInstrument(values: InstrumentFormValues): Promise<Instrument> {

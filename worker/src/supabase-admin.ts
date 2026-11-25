@@ -49,21 +49,21 @@ export function createSupabaseDataStore(env: Env): SupabaseDataStore {
   return {
     async getInstrumentByToken(token: string): Promise<InstrumentRow | null> {
       const rows = await restGet<InstrumentRow[]>(
-        `instruments?select=${PUBLIC_SELECT}&public_token=eq.${encodeURIComponent(token)}&limit=1`
+        `instruments?select=${PUBLIC_SELECT}&public_token=eq.${encodeURIComponent(token)}&deleted_at=is.null&limit=1`
       );
       return rows[0] ?? null;
     },
 
     async getInstrumentByCode(code: string): Promise<InstrumentRow | null> {
       const rows = await restGet<InstrumentRow[]>(
-        `instruments?select=${PUBLIC_SELECT}&instrument_code=ilike.${encodeURIComponent(code)}&limit=1`
+        `instruments?select=${PUBLIC_SELECT}&instrument_code=ilike.${encodeURIComponent(code)}&deleted_at=is.null&limit=1`
       );
       return rows[0] ?? null;
     },
 
     async getInstrumentById(id: string): Promise<InstrumentRow | null> {
       const rows = await restGet<InstrumentRow[]>(
-        `instruments?select=${PUBLIC_SELECT}&id=eq.${encodeURIComponent(id)}&limit=1`
+        `instruments?select=${PUBLIC_SELECT}&id=eq.${encodeURIComponent(id)}&deleted_at=is.null&limit=1`
       );
       return rows[0] ?? null;
     },
@@ -100,7 +100,7 @@ export function createSupabaseDataStore(env: Env): SupabaseDataStore {
 
     async listInstrumentsWithExpiry(): Promise<InstrumentRow[]> {
       return restGet<InstrumentRow[]>(
-        `instruments?select=${PUBLIC_SELECT}&expiry_date=not.is.null&order=expiry_date.asc`
+        `instruments?select=${PUBLIC_SELECT}&deleted_at=is.null&expiry_date=not.is.null&order=expiry_date.asc`
       );
     },
 

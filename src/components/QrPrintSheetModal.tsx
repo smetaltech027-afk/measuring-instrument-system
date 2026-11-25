@@ -11,6 +11,7 @@ interface QrPrintSheetModalProps {
   open: boolean;
   instruments: Instrument[];
   onClose: () => void;
+  onPrintCompleted?: (count: number) => void;
 }
 
 interface GeneratedTile {
@@ -19,7 +20,12 @@ interface GeneratedTile {
   dataUrl: string;
 }
 
-export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetModalProps) {
+export function QrPrintSheetModal({
+  open,
+  instruments,
+  onClose,
+  onPrintCompleted
+}: QrPrintSheetModalProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [tiles, setTiles] = useState<GeneratedTile[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -101,7 +107,20 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
               type="button"
               className="btn btn--primary"
               disabled={generating || tiles.length === 0}
-              onClick={() => window.print()}
+              onClick={() => {
+                const printedCount = tiles.length;
+                let notified = false;
+                const notifyDone = () => {
+                  if (notified) return;
+                  notified = true;
+                  window.removeEventListener('afterprint', notifyDone);
+                  onPrintCompleted?.(printedCount);
+                };
+                window.addEventListener('afterprint', notifyDone, { once: true });
+                window.print();
+                // Fallback for mobile browsers that return synchronously after print dialog closes
+                window.setTimeout(notifyDone, 300);
+              }}
             >
               <PrinterIcon size={18} />
               พิมพ์แผ่น A4 ({tiles.length} ฉลาก)
