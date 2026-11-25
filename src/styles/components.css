@@ -283,7 +283,9 @@
 }
 
 .detail-photo-frame {
-  width: 100%;
+  width: 70%;
+  max-width: 240px;
+  margin: 0 auto;
   aspect-ratio: 4 / 3;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
@@ -292,6 +294,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (min-width: 700px) {
+  .detail-photo-frame {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
 }
 
 .detail-photo-frame img {

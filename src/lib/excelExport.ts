@@ -3,8 +3,10 @@ import type { Instrument } from '../types/instrument';
 import { getBangkokTodayIso } from './dateRules';
 
 const DATA_START_ROW = 10;
-const BASE_TEMPLATE_CAPACITY = 74; // Rows 10..83 in Book1.xlsx / RG-PD-001-template.xlsx
+const BASE_TEMPLATE_CAPACITY = 74; // Rows 10..83 in RG-PD-001-template.xlsx
 const TEMPLATE_FOOTER_DATE_ROW = 87;
+const FIRST_TABLE_COL = 2; // Column B (No.)
+const LAST_TABLE_COL = 11; // Column K (Vendor)
 
 function isoToUtcDate(iso: string | null): Date | null {
   if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
@@ -19,7 +21,7 @@ function formatThaiGregorianDate(iso: string): string {
 
 function copyRowStyle(sourceRow: ExcelJS.Row, targetRow: ExcelJS.Row): void {
   targetRow.height = sourceRow.height ?? 15;
-  for (let col = 2; col <= 10; col += 1) {
+  for (let col = FIRST_TABLE_COL; col <= LAST_TABLE_COL; col += 1) {
     const srcCell = sourceRow.getCell(col);
     const dstCell = targetRow.getCell(col);
     dstCell.style = JSON.parse(JSON.stringify(srcCell.style));
@@ -27,8 +29,9 @@ function copyRowStyle(sourceRow: ExcelJS.Row, targetRow: ExcelJS.Row): void {
 }
 
 /**
- * Populate the blank RG-PD-001 template with ALL registry instruments (unfiltered, ordered by sort_order).
- * Preserves company header, document number, column widths, borders, signature block, and A4 portrait layout.
+ * Populate the blank RG-PD-001 template (columns B..K including รหัส) with ALL registry instruments
+ * (unfiltered, ordered by sort_order). Preserves company header, document number, column widths,
+ * borders, signature block (I86:J86), and A4 portrait layout.
  * Automatically shifts signature block downward and updates page count when instrument count exceeds 74.
  */
 export async function buildExportWorkbookBuffer(
@@ -60,7 +63,7 @@ export async function buildExportWorkbookBuffer(
       const addedRow = sheet.getRow(insertPosition + offset);
       copyRowStyle(styleReferenceRow, addedRow);
     }
-    // Repeat table header row on subsequent printed pages
+    // Repeat table header rows on subsequent printed pages
     sheet.pageSetup.printTitlesRow = '1:9';
   }
 
@@ -71,35 +74,36 @@ export async function buildExportWorkbookBuffer(
     const item = ordered[idx];
 
     if (!item) {
-      for (let col = 2; col <= 10; col += 1) {
+      for (let col = FIRST_TABLE_COL; col <= LAST_TABLE_COL; col += 1) {
         row.getCell(col).value = null;
       }
       continue;
     }
 
-    row.getCell(2).value = idx + 1; // Dynamic No. 1..N (permanent code & QR token remain untouched)
-    row.getCell(3).value = item.name;
-    row.getCell(4).value = item.size ?? null;
-    row.getCell(5).value = item.location ?? null; // Export keeps original "User" column header
-    row.getCell(6).value = item.status_text;
+    row.getCell(2).value = idx + 1; // B: No.
+    row.getCell(3).value = item.instrument_code; // C: รหัส (MI-XXX)
+    row.getCell(4).value = item.name; // D: เครื่องมือ
+    row.getCell(5).value = item.size ?? null; // E: Size
+    row.getCell(6).value = item.location ?? null; // F: User
+    row.getCell(7).value = item.status_text; // G: Status
 
     const cmpDate = isoToUtcDate(item.compare_date);
     const calDate = isoToUtcDate(item.calibration_date);
     const expDate = isoToUtcDate(item.expiry_date);
 
-    row.getCell(7).value = cmpDate;
-    row.getCell(8).value = calDate ?? (cmpDate ? ' -' : null);
-    row.getCell(9).value = expDate;
-    row.getCell(10).value = item.vendor ?? null;
+    row.getCell(8).value = cmpDate; // H: COMPARE BLOCK / RING GAUGE
+    row.getCell(9).value = calDate ?? (cmpDate ? ' -' : null); // I: CALIBRATION
+    row.getCell(10).value = expDate; // J: EXPIRED
+    row.getCell(11).value = item.vendor ?? null; // K: Vendor
   }
 
-  // Update print date and page count
+  // Update print date (K3), page count (K5), and footer date (B87 + extraRows)
   const todayIso = getBangkokTodayIso(exportDate);
   const todayDateObj = isoToUtcDate(todayIso);
-  sheet.getCell('J3').value = todayDateObj;
+  sheet.getCell('K3').value = todayDateObj;
 
   const totalPages = Math.max(1, Math.ceil(Math.max(1, ordered.length) / BASE_TEMPLATE_CAPACITY));
-  sheet.getCell('J5').value = `1/${totalPages}`;
+  sheet.getCell('K5').value = `1/${totalPages}`;
 
   const footerDateRowNum = TEMPLATE_FOOTER_DATE_ROW + extraRows;
   sheet.getCell(`B${footerDateRowNum}`).value = `Date ${formatThaiGregorianDate(todayIso)}`;

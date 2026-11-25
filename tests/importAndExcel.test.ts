@@ -67,15 +67,20 @@ describe('Book1.xlsx import mapping and RG-PD-001 Excel export', () => {
     const sheet = wb.getWorksheet('sheet1')!;
 
     expect(sheet.getCell('B2').value).toBe('บริษัท เอส เมททอล เทค จำกัด');
-    expect(sheet.getCell('J2').value).toBe('RG-PD-001');
-    expect(sheet.getCell('J5').value).toBe('1/1');
+    expect(sheet.getCell('K2').value).toBe('RG-PD-001');
+    expect(sheet.getCell('K5').value).toBe('1/1');
+    expect(sheet.getCell('B9').value).toBe('No.');
+    expect(sheet.getCell('C9').value).toBe('รหัส');
+    expect(sheet.getCell('D9').value).toBe('เครื่องมือ');
     expect(sheet.getCell('B10').value).toBe(1);
-    expect(sheet.getCell('C10').value).toBe('Vernier Caliper No. 001');
-    expect(sheet.getCell('H10').value).toBe(' -');
+    expect(sheet.getCell('C10').value).toBe('MI-001');
+    expect(sheet.getCell('D10').value).toBe('Vernier Caliper No. 001');
+    expect(sheet.getCell('I10').value).toBe(' -');
     expect(sheet.getCell('B83').value).toBe(74);
-    expect(sheet.getCell('C83').value).toBe('Micro meter No.009');
-    expect(sheet.getCell('H86').value).toBe('Check by');
-    expect(sheet.getCell('I86').value).toBe('Approved by');
+    expect(sheet.getCell('C83').value).toBe('MI-074');
+    expect(sheet.getCell('D83').value).toBe('Micro meter No.009');
+    expect(sheet.getCell('I86').value).toBe('Check by');
+    expect(sheet.getCell('J86').value).toBe('Approved by');
     expect(sheet.getCell('B87').value).toBe('Date 24/11/2026');
     expect(sheet.pageSetup.paperSize).toBe(9);
     expect(sheet.pageSetup.orientation).toBe('portrait');
@@ -108,12 +113,13 @@ describe('Book1.xlsx import mapping and RG-PD-001 Excel export', () => {
     await wb.xlsx.load(outBuf);
     const sheet = wb.getWorksheet('sheet1')!;
 
-    expect(sheet.getCell('J5').value).toBe('1/2');
+    expect(sheet.getCell('K5').value).toBe('1/2');
     expect(sheet.getCell('B89').value).toBe(80);
-    expect(sheet.getCell('C89').value).toBe('New Precision Gauge 80');
+    expect(sheet.getCell('C89').value).toBe('MI-080');
+    expect(sheet.getCell('D89').value).toBe('New Precision Gauge 80');
     // Footer shifted cleanly by +6 rows (86 -> 92, 87 -> 93)
-    expect(sheet.getCell('H92').value).toBe('Check by');
-    expect(sheet.getCell('I92').value).toBe('Approved by');
+    expect(sheet.getCell('I92').value).toBe('Check by');
+    expect(sheet.getCell('J92').value).toBe('Approved by');
     expect(sheet.getCell('B93').value).toBe('Date 24/11/2026');
   });
 });
