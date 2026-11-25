@@ -1,70 +1,25 @@
 import QRCode from 'qrcode';
-import { buildInstrumentQrUrl } from './qrUrl';
+import { buildCompactQrPayload } from './qrUrl';
 
-export async function generateQrDataUrl(url: string, width = 360): Promise<string> {
-  return QRCode.toDataURL(url, {
+/**
+ * Generate a crisp high-contrast Version-1 QR data URL for compact labels (e.g. 9x9 mm).
+ * Uses pure black on white with tight 1-module quiet zone for maximum scan clarity.
+ */
+export async function generateQrDataUrl(payload: string, width = 300): Promise<string> {
+  return QRCode.toDataURL(payload, {
     width,
-    margin: 2,
+    margin: 1,
     errorCorrectionLevel: 'M',
     color: {
-      dark: '#173447',
+      dark: '#000000',
       light: '#FFFFFF'
     }
   });
 }
 
-function wrapCanvasText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number,
-  maxLines: number
-): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = '';
-
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (ctx.measureText(candidate).width <= maxWidth) {
-      current = candidate;
-    } else {
-      if (current) lines.push(current);
-      // Handle single long Thai/English token exceeding maxWidth
-      if (ctx.measureText(word).width > maxWidth) {
-        let chunk = '';
-        for (const ch of word) {
-          if (ctx.measureText(chunk + ch).width > maxWidth && chunk) {
-            lines.push(chunk);
-            chunk = ch;
-          } else {
-            chunk += ch;
-          }
-        }
-        current = chunk;
-      } else {
-        current = word;
-      }
-    }
-    if (lines.length >= maxLines) break;
-  }
-
-  if (current && lines.length < maxLines) {
-    lines.push(current);
-  }
-
-  if (lines.length === maxLines) {
-    const last = lines[maxLines - 1];
-    if (ctx.measureText(last).width > maxWidth - 16) {
-      lines[maxLines - 1] = `${last.slice(0, Math.max(1, last.length - 2))}…`;
-    }
-  }
-
-  return lines;
-}
-
 /**
- * Render a crisp downloadable PNG label card containing the QR code,
- * human-readable permanent code (MI-xxx), and instrument name (supports Thai & long names).
+ * Render a compact downloadable PNG label containing ONLY the QR code (encoding MI-xxx)
+ * and the human-readable code (MI-xxx) underneath — matching the 9x9 mm A4 cut-sheet style.
  */
 export async function downloadInstrumentQrPng(instrument: {
   instrument_code: string;
@@ -72,8 +27,8 @@ export async function downloadInstrumentQrPng(instrument: {
   name: string;
   location: string | null;
 }): Promise<string> {
-  const qrUrl = buildInstrumentQrUrl(instrument.public_token);
-  const qrDataUrl = await generateQrDataUrl(qrUrl, 480);
+  const compactPayload = buildCompactQrPayload(instrument.instrument_code);
+  const qrDataUrl = await generateQrDataUrl(compactPayload, 300);
 
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const el = new Image();
@@ -82,59 +37,36 @@ export async function downloadInstrumentQrPng(instrument: {
     el.src = qrDataUrl;
   });
 
+  // Compact proportion matching 13x16 mm label (at ~300 DPI -> 260x320 px crisp export)
   const canvas = document.createElement('canvas');
-  canvas.width = 640;
-  canvas.height = 820;
+  canvas.width = 260;
+  canvas.height = 320;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('เบราว์เซอร์ไม่รองรับการสร้างไฟล์ภาพ QR');
 
-  // Card background & outer border
+  // White background & subtle dashed cut border
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = '#173447';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
-
-  // Header strip
-  ctx.fillStyle = '#173447';
-  ctx.fillRect(18, 18, canvas.width - 36, 76);
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '600 24px "IBM Plex Sans Thai", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('S METAL TECH — ทะเบียนเครื่องมือวัด', canvas.width / 2, 65);
-
-  // QR image
-  ctx.drawImage(img, 80, 118, 480, 480);
-
-  // Code badge
-  ctx.fillStyle = '#EAF3F6';
-  ctx.fillRect(140, 612, 360, 56);
-  ctx.strokeStyle = '#246A82';
+  ctx.save();
+  ctx.strokeStyle = '#6B8494';
   ctx.lineWidth = 2;
-  ctx.strokeRect(140, 612, 360, 56);
+  ctx.setLineDash([6, 4]);
+  ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+  ctx.restore();
 
+  // Crisp QR code (9x9 mm proportion)
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, 30, 26, 200, 200);
+
+  // Instrument code only (e.g. MI-001)
   ctx.fillStyle = '#173447';
-  ctx.font = '600 32px "IBM Plex Mono", monospace';
-  ctx.fillText(instrument.instrument_code, canvas.width / 2, 651);
+  ctx.font = '700 34px "IBM Plex Mono", Consolas, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(compactPayload, canvas.width / 2, 272);
 
-  // Instrument name (up to 2 wrapped lines)
-  ctx.fillStyle = '#173447';
-  ctx.font = '600 24px "IBM Plex Sans Thai", sans-serif';
-  const nameLines = wrapCanvasText(ctx, instrument.name, 540, 2);
-  nameLines.forEach((line, index) => {
-    ctx.fillText(line, canvas.width / 2, 712 + index * 34);
-  });
-
-  // Location sub-caption
-  if (instrument.location) {
-    ctx.fillStyle = '#4B6475';
-    ctx.font = '500 20px "IBM Plex Sans Thai", sans-serif';
-    ctx.fillText(instrument.location, canvas.width / 2, 782);
-  }
-
-  const filename = `QR_${instrument.instrument_code}.png`;
+  const filename = `QR_${compactPayload}.png`;
   const dataUrl = canvas.toDataURL('image/png');
   const link = document.createElement('a');
   link.href = dataUrl;

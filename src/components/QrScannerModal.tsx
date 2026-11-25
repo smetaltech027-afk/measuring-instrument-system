@@ -8,6 +8,7 @@ interface QrScannerModalProps {
   open: boolean;
   onClose: () => void;
   onDetectedToken: (token: string) => void;
+  onDetectedCode: (code: string) => void;
 }
 
 type ScannerState =
@@ -15,7 +16,12 @@ type ScannerState =
   | { status: 'scanning' }
   | { status: 'error'; message: string; kind: 'permission' | 'no_camera' | 'invalid_qr' | 'other' };
 
-export function QrScannerModal({ open, onClose, onDetectedToken }: QrScannerModalProps) {
+export function QrScannerModal({
+  open,
+  onClose,
+  onDetectedToken,
+  onDetectedCode
+}: QrScannerModalProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const detectedOnceRef = useRef(false);
@@ -62,18 +68,20 @@ export function QrScannerModal({ open, onClose, onDetectedToken }: QrScannerModa
 
       try {
         const reader = new BrowserQRCodeReader(undefined, {
-          delayBetweenScanAttempts: 250,
+          delayBetweenScanAttempts: 200,
           delayBetweenScanSuccess: 500
         });
 
         const videoEl = videoRef.current;
         if (!videoEl || cancelled) return;
 
-        // Request rear camera by default when available
+        // Request rear camera at higher resolution so compact 9x9 mm QR labels resolve sharply
         const controls = await reader.decodeFromConstraints(
           {
             video: {
-              facingMode: { ideal: 'environment' }
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
             }
           },
           videoEl,
@@ -83,7 +91,11 @@ export function QrScannerModal({ open, onClose, onDetectedToken }: QrScannerModa
             if (parsed.valid) {
               detectedOnceRef.current = true;
               stopCamera();
-              onDetectedToken(parsed.token);
+              if (parsed.kind === 'code') {
+                onDetectedCode(parsed.code);
+              } else {
+                onDetectedToken(parsed.token);
+              }
             } else {
               detectedOnceRef.current = true;
               stopCamera();
@@ -91,7 +103,7 @@ export function QrScannerModal({ open, onClose, onDetectedToken }: QrScannerModa
                 status: 'error',
                 kind: 'invalid_qr',
                 message:
-                  'QR Code นี้ไม่ใช่ลิงก์ของระบบทะเบียนเครื่องมือวัด กรุณาตรวจสอบฉลากแล้วลองสแกนใหม่อีกครั้งค่ะ'
+                  'QR Code นี้ไม่ใช่รหัสของระบบทะเบียนเครื่องมือวัด กรุณาตรวจสอบฉลากแล้วลองสแกนใหม่อีกครั้งค่ะ'
               });
             }
           }
@@ -135,7 +147,7 @@ export function QrScannerModal({ open, onClose, onDetectedToken }: QrScannerModa
       cancelled = true;
       stopCamera();
     };
-  }, [open, attemptKey, onDetectedToken, stopCamera]);
+  }, [open, attemptKey, onDetectedToken, onDetectedCode, stopCamera]);
 
   return (
     <Modal

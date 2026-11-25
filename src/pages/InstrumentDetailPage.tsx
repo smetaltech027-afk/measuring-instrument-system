@@ -2,14 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeftIcon, QrScanIcon } from '../components/Icons';
 import { InstrumentDetailCard } from '../components/InstrumentDetailCard';
 import { QrScannerModal } from '../components/QrScannerModal';
-import { fetchPublicInstrumentByToken } from '../lib/workerApi';
+import { fetchPublicInstrumentByToken, lookupPublicInstrumentByCode } from '../lib/workerApi';
 import type { PublicInstrument } from '../types/instrument';
 
 interface InstrumentDetailPageProps {
   token: string;
   preloadedInstrument?: PublicInstrument | null;
   onBackHome: () => void;
-  onOpenInstrumentByToken: (token: string) => void;
+  onOpenInstrumentByToken: (token: string, preloaded?: PublicInstrument) => void;
 }
 
 export function InstrumentDetailPage({
@@ -129,6 +129,32 @@ export function InstrumentDetailPage({
         onDetectedToken={(nextToken) => {
           setScannerOpen(false);
           onOpenInstrumentByToken(nextToken);
+        }}
+        onDetectedCode={async (code) => {
+          setScannerOpen(false);
+          setLoading(true);
+          setError(null);
+          try {
+            const next = await lookupPublicInstrumentByCode(code);
+            onOpenInstrumentByToken(next.public_token, next);
+          } catch (err) {
+            setInstrument(null);
+            if (err instanceof Error && err.message === 'NOT_FOUND') {
+              setError({
+                kind: 'not_found',
+                message: `ไม่พบข้อมูลเครื่องมือวัดรหัส “${code}” ในระบบ`
+              });
+            } else {
+              setError({
+                kind: 'network',
+                message:
+                  err instanceof Error
+                    ? err.message
+                    : 'ไม่สามารถโหลดข้อมูลเครื่องมือวัดได้ กรุณาลองใหม่อีกครั้ง'
+              });
+            }
+            setLoading(false);
+          }
         }}
       />
     </main>

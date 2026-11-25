@@ -150,7 +150,7 @@ export function App() {
           token={route.token}
           preloadedInstrument={preloadedInstrument}
           onBackHome={navigateHome}
-          onOpenInstrumentByToken={(tok) => navigateInstrument(tok)}
+          onOpenInstrumentByToken={navigateInstrument}
         />
       ) : null}
 

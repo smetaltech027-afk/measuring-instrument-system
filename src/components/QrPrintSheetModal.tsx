@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatDateShortNumeric, getBangkokTodayIso } from '../lib/dateRules';
 import { generateQrDataUrl } from '../lib/qrGenerator';
-import { buildInstrumentQrUrl, getConfiguredPublicBaseUrl } from '../lib/qrUrl';
+import { buildCompactQrPayload } from '../lib/qrUrl';
 import type { Instrument } from '../types/instrument';
 import { PrinterIcon } from './Icons';
 import { Modal } from './Modal';
@@ -16,8 +16,6 @@ interface QrPrintSheetModalProps {
 interface GeneratedTile {
   id: string;
   code: string;
-  name: string;
-  location: string | null;
   dataUrl: string;
 }
 
@@ -53,17 +51,14 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
     setGenerating(true);
 
     async function renderAll() {
-      const baseUrl = getConfiguredPublicBaseUrl();
       const out: GeneratedTile[] = [];
       for (const inst of selectedItems) {
         if (cancelled) return;
-        const url = buildInstrumentQrUrl(inst.public_token, baseUrl);
-        const dataUrl = await generateQrDataUrl(url, 260);
+        const compactCode = buildCompactQrPayload(inst.instrument_code);
+        const dataUrl = await generateQrDataUrl(compactCode, 240);
         out.push({
           id: inst.id,
-          code: inst.instrument_code,
-          name: inst.name,
-          location: inst.location,
+          code: compactCode,
           dataUrl
         });
       }
@@ -89,7 +84,6 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
   };
 
   const todayDisplay = formatDateShortNumeric(getBangkokTodayIso());
-  const baseUrlDisplay = getConfiguredPublicBaseUrl();
 
   return (
     <>
@@ -118,11 +112,12 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="alert alert--info">
             <div>
-              <strong>คำแนะนำก่อนพิมพ์ฉลากจริง:</strong> ตั้งค่าหน้ากระดาษเป็น{' '}
-              <strong>A4 แนวตั้ง</strong> และกำหนดมาตราส่วนเป็น <strong>100% (Actual Size)</strong>{' '}
-              ไม่ย่อหน้าอัตโนมัติ เพื่อให้กรอบเส้นประตัดตรงขนาด
-              <div className="field-hint mono" style={{ marginTop: '4px' }}>
-                ลิงก์ปลายทางใน QR: {baseUrlDisplay}/?instrument=…
+              <strong>ขนาดฉลากจิ๋ว (Compact 9 × 9 มม.):</strong> ตั้งค่าหน้ากระดาษเป็น{' '}
+              <strong>A4 แนวตั้ง</strong> และมาตราส่วน <strong>100% (Actual Size)</strong>{' '}
+              ไม่ย่อหน้าอัตโนมัติ (ขนาดกรอบเส้นประตัด 13 × 16 มม.)
+              <div className="field-hint" style={{ marginTop: '4px' }}>
+                ข้อมูลใน QR: รหัสเครื่องมือแบบสั้น (เช่น <span className="mono">MI-001</span>)
+                เพื่อให้จุด QR คมใหญ่และสแกนผ่านปุ่มสแกนในแอปได้ง่ายแม้ติดบนเครื่องมือขนาดเล็ก
               </div>
             </div>
           </div>
@@ -136,7 +131,9 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
               justifyContent: 'space-between'
             }}
           >
-            <span className="field-label">เลือกรายการที่ต้องการพิมพ์ ({selectedItems.length}/{orderedInstruments.length})</span>
+            <span className="field-label">
+              เลือกรายการที่ต้องการพิมพ์ ({selectedItems.length}/{orderedInstruments.length})
+            </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
@@ -216,14 +213,12 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
                     className="qr-label-img"
                     src={tile.dataUrl}
                     alt={`QR ${tile.code}`}
-                    width={112}
-                    height={112}
+                    width={64}
+                    height={64}
                   />
                   <div className="qr-label-code" translate="no">
                     {tile.code}
                   </div>
-                  <div className="qr-label-name">{tile.name}</div>
-                  {tile.location ? <div className="qr-label-loc">{tile.location}</div> : null}
                 </div>
               ))}
             </div>
@@ -236,7 +231,9 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
         ? createPortal(
             <div className="print-only-sheet" aria-hidden="true">
               <div className="print-sheet-header">
-                <strong>บริษัท เอส เมททอล เทค จำกัด — ฉลาก QR ทะเบียนเครื่องมือวัด (RG-PD-001)</strong>
+                <strong>
+                  บริษัท เอส เมททอล เทค จำกัด — ฉลาก QR เครื่องมือวัดขนาด 9×9 มม. (RG-PD-001)
+                </strong>
                 <span className="mono">
                   พิมพ์วันที่ {todayDisplay} • จำนวน {tiles.length} ฉลาก
                 </span>
@@ -248,12 +245,10 @@ export function QrPrintSheetModal({ open, instruments, onClose }: QrPrintSheetMo
                       className="qr-label-img"
                       src={tile.dataUrl}
                       alt=""
-                      width={113}
-                      height={113}
+                      width={34}
+                      height={34}
                     />
                     <div className="qr-label-code">{tile.code}</div>
-                    <div className="qr-label-name">{tile.name}</div>
-                    {tile.location ? <div className="qr-label-loc">{tile.location}</div> : null}
                   </div>
                 ))}
               </div>

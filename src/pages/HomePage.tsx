@@ -15,10 +15,9 @@ export function HomePage({ onOpenInstrumentByToken, onNavigateAdmin }: HomePageP
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
 
-  const handleCodeLookup = async (event: FormEvent) => {
-    event.preventDefault();
+  const lookupAndOpenCode = async (rawCode: string) => {
     setLookupError(null);
-    const trimmed = codeInput.trim();
+    const trimmed = rawCode.trim();
     if (!trimmed) {
       setLookupError('กรุณากรอกรหัสเครื่องมือ เช่น MI-001');
       return;
@@ -39,6 +38,11 @@ export function HomePage({ onOpenInstrumentByToken, onNavigateAdmin }: HomePageP
     } finally {
       setLookupLoading(false);
     }
+  };
+
+  const handleCodeLookup = async (event: FormEvent) => {
+    event.preventDefault();
+    await lookupAndOpenCode(codeInput);
   };
 
   return (
@@ -175,6 +179,11 @@ export function HomePage({ onOpenInstrumentByToken, onNavigateAdmin }: HomePageP
         onDetectedToken={(token) => {
           setScannerOpen(false);
           onOpenInstrumentByToken(token);
+        }}
+        onDetectedCode={(code) => {
+          setScannerOpen(false);
+          setCodeInput(code);
+          void lookupAndOpenCode(code);
         }}
       />
     </main>
