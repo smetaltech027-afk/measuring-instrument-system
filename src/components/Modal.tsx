@@ -11,11 +11,15 @@ interface ModalProps {
   wide?: boolean;
 }
 
+// Reference-counted body scroll lock so stacked modals never leave overflow: hidden stuck
+let activeModalCount = 0;
+let originalBodyOverflow = '';
+
 /**
  * Portal-based Modal compliant with Mobile & iOS Safari rules:
  * - Rendered in document.body to avoid ancestor transform/filter issues
  * - Uses 100svh max-height + safe-area insets + internal scroll body
- * - Handles Escape key, background scroll lock, and focus restoration
+ * - Handles Escape key, reference-counted background scroll lock, and focus restoration
  */
 export function Modal({ open, title, onClose, children, footer, wide = false }: ModalProps) {
   const titleId = useId();
@@ -28,8 +32,11 @@ export function Modal({ open, title, onClose, children, footer, wide = false }: 
     if (!open) return;
 
     previousFocusRef.current = document.activeElement as HTMLElement | null;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (activeModalCount === 0) {
+      originalBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+    activeModalCount += 1;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -50,7 +57,10 @@ export function Modal({ open, title, onClose, children, footer, wide = false }: 
     return () => {
       window.clearTimeout(focusTimer);
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = prevOverflow;
+      activeModalCount = Math.max(0, activeModalCount - 1);
+      if (activeModalCount === 0) {
+        document.body.style.overflow = originalBodyOverflow;
+      }
       previousFocusRef.current?.focus?.();
     };
   }, [open]);

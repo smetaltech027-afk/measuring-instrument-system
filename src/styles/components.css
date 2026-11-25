@@ -292,6 +292,7 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 700;
+  white-space: nowrap;
   background-color: var(--chip-bg);
   color: var(--chip-ink);
   border: 1px solid var(--chip-border);
