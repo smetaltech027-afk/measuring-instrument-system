@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   validateImageFileClient,
   validateInstrumentForm,
@@ -8,6 +8,8 @@ import type { Instrument, InstrumentFormValues } from '../types/instrument';
 import { AlertTriangleIcon } from './Icons';
 import { InstrumentPlaceholder } from './InstrumentPlaceholder';
 import { Modal } from './Modal';
+
+const CUSTOM_LOCATION_VALUE = '__CUSTOM__';
 
 interface InstrumentFormModalProps {
   open: boolean;
@@ -56,11 +58,12 @@ export function InstrumentFormModal({
   onSubmit
 }: InstrumentFormModalProps) {
   const formId = useId();
-  const locListId = useId();
   const vendorListId = useId();
+  const customLocationInputRef = useRef<HTMLInputElement | null>(null);
 
   const initialSnapshot = useMemo(() => toInitialValues(initialInstrument), [initialInstrument]);
   const [values, setValues] = useState<InstrumentFormValues>(initialSnapshot);
+  const [isCustomLocation, setIsCustomLocation] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
@@ -69,9 +72,19 @@ export function InstrumentFormModal({
   const [saving, setSaving] = useState(false);
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
 
+  const locationChoices = useMemo(() => {
+    const set = new Set<string>(locationSuggestions);
+    const currentInitial = initialInstrument?.location?.trim();
+    if (currentInitial) {
+      set.add(currentInitial);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'th'));
+  }, [locationSuggestions, initialInstrument]);
+
   useEffect(() => {
     if (open) {
       setValues(toInitialValues(initialInstrument));
+      setIsCustomLocation(false);
       setErrors({});
       setSelectedPhoto(null);
       setPhotoError(null);
@@ -246,22 +259,48 @@ export function InstrumentFormModal({
             <label className="field-label" htmlFor={`${formId}-location`}>
               สถานที่ใช้งาน / หน่วยงาน
             </label>
-            <input
+            <select
               id={`${formId}-location`}
               name="location"
-              type="text"
-              list={locListId}
-              className="input"
-              value={values.location}
-              onChange={(e) => handleFieldChange('location', e.target.value)}
-              placeholder="เช่น CNC Machine, QC, SPARE…"
-              autoComplete="off"
-            />
-            <datalist id={locListId}>
-              {locationSuggestions.map((loc) => (
-                <option key={loc} value={loc} />
+              className="select"
+              value={isCustomLocation ? CUSTOM_LOCATION_VALUE : values.location}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (next === CUSTOM_LOCATION_VALUE) {
+                  setIsCustomLocation(true);
+                  handleFieldChange('location', '');
+                  window.requestAnimationFrame(() => {
+                    customLocationInputRef.current?.focus();
+                  });
+                } else {
+                  setIsCustomLocation(false);
+                  handleFieldChange('location', next);
+                }
+              }}
+            >
+              <option value="">-- เลือกสถานที่ใช้งาน / หน่วยงาน --</option>
+              {locationChoices.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
               ))}
-            </datalist>
+              <option value={CUSTOM_LOCATION_VALUE}>+ ระบุสถานที่ / หน่วยงานใหม่…</option>
+            </select>
+            {isCustomLocation ? (
+              <input
+                ref={customLocationInputRef}
+                id={`${formId}-location-custom`}
+                name="location_custom"
+                type="text"
+                className="input"
+                style={{ marginTop: '6px' }}
+                value={values.location}
+                onChange={(e) => handleFieldChange('location', e.target.value)}
+                placeholder="พิมพ์ชื่อสถานที่ใช้งาน / หน่วยงานใหม่…"
+                aria-label="ระบุสถานที่ใช้งานหรือหน่วยงานใหม่"
+                autoComplete="off"
+              />
+            ) : null}
             <span className="field-hint">ตอน Export Excel จะแสดงในคอลัมน์ User</span>
           </div>
 
