@@ -21,9 +21,9 @@ BEGIN
   VALUES (v_admin_id, 'rls-test-admin@example.com')
   ON CONFLICT (user_id) DO NOTHING;
 
-  -- Seed 1 test instrument as owner
-  INSERT INTO public.instruments (name, size, location, status_text, compare_date, expiry_date)
-  VALUES ('RLS Test Vernier', '0-150 mm.', 'QC', 'available', '2026-10-01', '2027-04-01')
+  -- Seed 1 test instrument as owner (explicit code so instrument_code_seq is never consumed)
+  INSERT INTO public.instruments (instrument_code, name, size, location, status_text, compare_date, expiry_date)
+  VALUES ('RLS-TEST-001', 'RLS Test Vernier', '0-150 mm.', 'QC', 'available', '2026-10-01', '2027-04-01')
   RETURNING id INTO v_inst_id;
 
   -- 1. Test ANON role: MUST be denied (permission error)
@@ -48,7 +48,7 @@ BEGIN
   RAISE NOTICE 'PASS: non-admin SELECT instruments returns 0 rows';
 
   BEGIN
-    INSERT INTO public.instruments (name) VALUES ('Illegal Insert');
+    INSERT INTO public.instruments (instrument_code, name) VALUES ('RLS-TEST-002', 'Illegal Insert');
     RAISE EXCEPTION 'FAIL: non-admin inserted instrument';
   EXCEPTION WHEN insufficient_privilege THEN
     RAISE NOTICE 'PASS: non-admin INSERT instruments blocked by RLS';
